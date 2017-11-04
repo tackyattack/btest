@@ -104,6 +104,29 @@ void *ll_get_data(list_node *head, uint16_t pos)
     }
 }
 
+void *ll_next(list_node *current_node)
+{
+    if((current_node)->next != NULL)
+    {
+        void *data = (current_node)->data;
+        return data;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+void *ll_data(list_node *node)
+{
+    return node->data;
+}
+
+void ll_iterate(list_node **current_node)
+{
+    (*current_node) = (*current_node)->next;
+}
+
 //------------------------
 
 
@@ -125,15 +148,15 @@ list_node *report_head = NULL;
 
 void update_test_status(const char *test_name, uint8_t passfail)
 {
-    uint16_t i = 0;
-    T_node *current_node = NULL;
-    while((T_node *)ll_get_data(test_head, i) != NULL && strcmp(((T_node *)(ll_get_data(test_head, i)))->name,test_name))
+    list_node *current_node = test_head;
+    T_node *data_node = (T_node *)ll_data(current_node);
+    while(data_node != NULL && strcmp(data_node->name,test_name))
     {
-        current_node = (T_node *)((ll_get_data(test_head, i)));
-        i++;
+        data_node = (T_node *)ll_data(current_node);
+        ll_iterate(&current_node);
     }
     
-    if(!passfail) current_node->failedCount++; // increment the number of failed tests
+    if(!passfail) data_node->failedCount++; // increment the number of failed tests
 }
 
 void expect_true(uint8_t val, const char *test_name)
@@ -176,14 +199,13 @@ void btest_add_test(void *testf, const char *name)
 
 void btest_run_all_tests()
 {
-    uint16_t i = 0;
-    T_node *current_node = NULL;
-    while((T_node *)ll_get_data(test_head, i) != NULL)
+    list_node *current_node = test_head;
+    while(current_node != NULL)
     {
-        current_node = (T_node *)(ll_get_data(test_head, i));
-        printf("====running %s====\n", current_node->name);
-        (*(current_node->test_ptr))(); // run the test
-        i++;
+        printf("==============================\n\n");
+        printf("====running %s====\n", ((T_node *)ll_data(current_node))->name);
+        (*(((T_node *)ll_data(current_node))->test_ptr))(); // run the test
+        ll_iterate(&current_node);
     }
     printf("==============================\n\n");
 }
@@ -195,15 +217,15 @@ void btest_teardown()
 
 void btest_report()
 {
-    T_node *current_node = (T_node *)ll_get_data(test_head, 0);
+    list_node *current_node = test_head;
+    T_node *data_node;
     uint16_t failed_tests_count = 0;
-    uint16_t i = 0;
     
     while(current_node != NULL)
     {
-        if(current_node->failedCount > 0) failed_tests_count += current_node->failedCount;
-        i++;
-        current_node = (T_node *)(ll_get_data(test_head, i));
+        data_node = (T_node *)ll_data(current_node);
+        if(data_node->failedCount > 0) failed_tests_count += data_node->failedCount;
+        ll_iterate(&current_node);
     }
     
     printf("failed tests: %d\n", failed_tests_count); // this could be more specific eventually
