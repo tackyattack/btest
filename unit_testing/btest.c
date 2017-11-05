@@ -16,8 +16,6 @@
 
 // An external function table map file could be cool (addresses to functions that could be read anywhere).
 
-// Note: test names can't have underscores since that is a delimiter
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,6 +103,62 @@ void update_test_status(const char *test_name, uint8_t passfail)
     
 }
 
+
+void btest_add_report(const char *test_name, char *filename, uint16_t line)
+{
+    R_node report;
+    report.test_name = malloc((uint8_t)strlen(test_name));
+    strcpy(report.test_name, test_name);
+    char fail_line[200] = {0};
+    get_file_line(filename, line, fail_line, 200);
+    report.failed_line_string = malloc((uint8_t)strlen(fail_line));
+    strcpy(report.failed_line_string, fail_line);
+    report.line_number = line;
+    
+    ll_add_node(&report_head, &report, sizeof(report));
+}
+
+void expect_equal_str(char *x, char *y, uint16_t size, const char *test_name, char *filename, uint16_t line)
+{
+    uint8_t passfail = 1;
+    uint16_t i = 0;
+    for(; (x[i] != '\0' && y[i] != '\0') && (x[i] == y[i]) && (i < size); i++)
+    {
+        
+    }
+    if(i < (size-1))
+    {
+        passfail = 0;
+    }
+    
+    if(passfail)
+    {
+        printf("%s: EXPECT EQUAL STR PASSED\n", test_name);
+        update_test_status(test_name, 1);
+    }
+    else
+    {
+        printf("-> %s: EXPECT EQUAL STR FAILED\n", test_name);
+        update_test_status(test_name, 0);
+        btest_add_report(test_name, filename, line);
+    }
+}
+
+void expect_equal_int(uint32_t x, uint32_t y, const char *test_name, char *filename, uint16_t line)
+{
+    if(x == y)
+    {
+        printf("%s: EXPECT EQUAL INT PASSED\n", test_name);
+        update_test_status(test_name, 1);
+    }
+    else
+    {
+        printf("-> %s: EXPECT EQUAL INT FAILED\n", test_name);
+        update_test_status(test_name, 0);
+        btest_add_report(test_name, filename, line);
+    }
+}
+
 void expect_true(uint8_t val, const char *test_name, char *filename, uint16_t line)
 {
     if(val)
@@ -116,17 +170,24 @@ void expect_true(uint8_t val, const char *test_name, char *filename, uint16_t li
     {
         printf("-> %s: EXPECT TRUE FAILED\n", test_name);
         update_test_status(test_name, 0);
+        btest_add_report(test_name, filename, line);
+
+    }
+}
+
+void expect_false(uint8_t val, const char *test_name, char *filename, uint16_t line)
+{
+    if(!val)
+    {
+        printf("%s: EXPECT FALSE PASSED\n", test_name);
+        update_test_status(test_name, 1);
+    }
+    else
+    {
+        printf("-> %s: EXPECT FALSE FAILED\n", test_name);
+        update_test_status(test_name, 0);
+        btest_add_report(test_name, filename, line);
         
-        R_node report;
-        report.test_name = malloc((uint8_t)strlen(test_name));
-        strcpy(report.test_name, test_name);
-        char fail_line[200] = {0};
-        get_file_line(filename, line, fail_line, 200);
-        report.failed_line_string = malloc((uint8_t)strlen(fail_line));
-        strcpy(report.failed_line_string, fail_line);
-        report.line_number = line;
-        
-        ll_add_node(&report_head, &report, sizeof(report));
     }
 }
 
