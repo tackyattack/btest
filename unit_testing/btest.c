@@ -22,134 +22,79 @@
 #include <stdlib.h>
 #include <string.h>
 #include "btest.h"
+#include "linked_list.h"
 
-//----- linked list -----
-
-typedef struct list_node
+void get_file_line(char *filename, uint16_t line, char *line_str, uint16_t line_str_size)
 {
-    void *data;
-    struct list_node *next;
-}list_node;
-
-
-// Note: to dereference void pointer: uint8_t value = *(uint8_t *)(void_ptr);
-
-void ll_add_node(list_node **head, void *data, uint8_t data_size)
-{
+    FILE *code_file;
     
-    list_node *new_node = malloc(sizeof(list_node));
-
-    new_node->data = malloc(data_size);
-    memcpy(new_node->data, data, data_size);
-    
-    if( (*head) == NULL )
+    code_file = fopen(filename, "r");
+    char code_c = fgetc(code_file);
+    uint16_t line_count = 0;
+    while(code_c != EOF && (line_count+1) < line)
     {
-        (*head) = new_node;
-        (*head)->next = NULL;
-    }
-    else
-    {
-        list_node *current_node = (*head);
-        while(current_node->next != NULL)
+        if(code_c == '\n')
         {
-            current_node = current_node->next;
+            line_count++;
         }
-        
-        new_node->next = NULL;
-        current_node->next = new_node;
-    }
-}
-
-void ll_teardown(list_node *head)
-{
-    // walk down the list and delete the nodes
-    list_node *current_node = head;
-    list_node *trail_node = head; // walks behind the current node
-    
-    while(current_node != NULL)
-    {
-        trail_node = current_node;
-        current_node = current_node->next;
-        free(trail_node->data); // delete the data that was alloctated
-        free(trail_node);
-        trail_node->data = NULL;
-        trail_node = NULL;
-    }
-}
-
-void *ll_get_data(list_node *head, uint16_t pos)
-{ // todo: make it so that it stores the last search position and can jump if get is >= last pos
-    uint8_t hit_end = 0;
-    list_node *current_node = head;
-    for (uint16_t i = 0; (i < pos) && (!hit_end); i++) {
-        
-        if(current_node->next == NULL && (i<pos))
-        {
-            current_node = NULL;
-            hit_end = 1;
-        }
-        else
-        {
-            current_node = current_node->next;
-        }
+        code_c = fgetc(code_file);
     }
     
-    if(current_node == NULL)
+    for(uint16_t i = 0; i < line_str_size && code_c != '\n'; i++)
     {
-        return NULL;
+        line_str[i] = code_c;
+        code_c = fgetc(code_file);
     }
-    else
-    {
-        return current_node->data;
-    }
+    
+    fclose(code_file);
 }
 
-void *ll_next(list_node *current_node)
-{
-    if((current_node)->next != NULL)
-    {
-        void *data = (current_node)->data;
-        return data;
-    }
-    else
-    {
-        return NULL;
-    }
-}
-
-void *ll_data(list_node *node)
-{
-    return node->data;
-}
-
-void ll_iterate(list_node **current_node)
-{
-    (*current_node) = (*current_node)->next;
-}
-
-//------------------------
-
-
-typedef struct test_report_node
+typedef struct
 {
     char *failed_line_string;
+    char *test_name;
+    uint16_t line_number;
 }R_node;
 
-typedef struct test_node
+void report_node_dealloc(void *data)
+{
+    R_node *report_node = (R_node *)(data);
+    free(report_node->failed_line_string);
+    free(report_node->test_name);
+    report_node->failed_line_string = NULL;
+    report_node->test_name = NULL;
+}
+
+typedef struct
 {
     char name[100];
     void (*test_ptr)(void); // function pointer
     uint16_t failedCount; // 0 -> pass    >0 -> number failed
 }T_node;
 
+void test_node_dealloc(void *data)
+{
+
+}
+
 list_node *test_head = NULL;
 list_node *report_head = NULL;
 
+void add_test_report(R_node node)
+{
+    ll_add_node(&report_head, &node, sizeof(node));
+}
+
+void add_test_node(T_node node)
+{
+    ll_add_node(&test_head, &node, sizeof(node));
+}
 
 void update_test_status(const char *test_name, uint8_t passfail)
 {
     list_node *current_node = test_head;
     T_node *data_node = (T_node *)ll_data(current_node);
+    
     while(data_node != NULL && strcmp(data_node->name,test_name))
     {
         data_node = (T_node *)ll_data(current_node);
@@ -157,9 +102,10 @@ void update_test_status(const char *test_name, uint8_t passfail)
     }
     
     if(!passfail) data_node->failedCount++; // increment the number of failed tests
+    
 }
 
-void expect_true(uint8_t val, const char *test_name)
+void expect_true(uint8_t val, const char *test_name, char *filename, uint16_t line)
 {
     if(val)
     {
@@ -170,17 +116,18 @@ void expect_true(uint8_t val, const char *test_name)
     {
         printf("-> %s: EXPECT TRUE FAILED\n", test_name);
         update_test_status(test_name, 0);
+        
+        R_node report;
+        report.test_name = malloc((uint8_t)strlen(test_name));
+        strcpy(report.test_name, test_name);
+        char fail_line[200] = {0};
+        get_file_line(filename, line, fail_line, 200);
+        report.failed_line_string = malloc((uint8_t)strlen(fail_line));
+        strcpy(report.failed_line_string, fail_line);
+        report.line_number = line;
+        
+        ll_add_node(&report_head, &report, sizeof(report));
     }
-}
-
-void add_test_report(R_node node)
-{
-    ll_add_node(&report_head, &node, sizeof(node));
-}
-
-void add_test_node(T_node node)
-{
-    ll_add_node(&test_head, &node, sizeof(node));
 }
 
 void btest_add_test(void *testf, const char *name)
@@ -212,7 +159,8 @@ void btest_run_all_tests()
 
 void btest_teardown()
 { // walk down the list and delete the test
-    ll_teardown(test_head);
+    ll_teardown(test_head, test_node_dealloc);
+    ll_teardown(report_head, report_node_dealloc);
 }
 
 void btest_report()
@@ -230,6 +178,15 @@ void btest_report()
     
     printf("failed tests: %d\n", failed_tests_count); // this could be more specific eventually
                                                       // i.e. which tests failed as a whole, and which part
+    
+    current_node = report_head;
+    R_node *report_node;
+    while(current_node != NULL)
+    {
+        report_node = (R_node *)ll_data(current_node);
+        printf("%s: line %d:%s\n",report_node->test_name,report_node->line_number, report_node->failed_line_string);
+        ll_iterate(&current_node);
+    }
 }
 
 void btest_start_testing()
@@ -240,7 +197,7 @@ void btest_start_testing()
 
     printf("starting testing...\n\n");
     btest_run_all_tests();
-    
+
     printf("======== testing report ========\n");
     btest_report();
     printf("================================\n\n");
@@ -248,7 +205,7 @@ void btest_start_testing()
     printf("tearing down testing...\n");
     btest_teardown();
     printf("testing completed...\n");
-    
+
     printf("++++++++++++++++++++++++\n\n\n");
     
 }
