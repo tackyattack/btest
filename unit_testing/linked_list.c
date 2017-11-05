@@ -40,12 +40,6 @@ void ll_add_node(list_node **head, void *data, uint16_t data_size)
     }
 }
 
-// Note: could have a dealloc callback that passes back the
-//       data so that it can be cast to the type and then
-//       manually free whatever was allocated.
-//       For example, string pointers within a node structure.
-//       This would be run before the trail is freed.
-
 void ll_teardown(list_node *head, void (*dealloc)(void *data))
 {
     // walk down the list and delete the nodes
