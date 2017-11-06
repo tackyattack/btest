@@ -14,7 +14,7 @@ TEST(testExternal, testify)
 {
     EXPECT_TRUE(1);
     EXPECT_EQ_INT(23, 23);
-    EXPECT_EQ_INT(23, 22);
+    EXPECT_EQ_INT(23001, 22);
     EXPECT_FALSE(1);
     EXPECT_FALSE(0);
     EXPECT_EQ_STR("hello", "hello", sizeof("hello"));

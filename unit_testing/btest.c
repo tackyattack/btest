@@ -50,6 +50,7 @@ void get_file_line(char *filename, uint16_t line, char *line_str, uint16_t line_
 typedef struct
 {
     char *failed_line_string;
+    char *failed_input;
     char *test_name;
     uint16_t line_number;
 }R_node;
@@ -59,8 +60,10 @@ void report_node_dealloc(void *data)
     R_node *report_node = (R_node *)(data);
     free(report_node->failed_line_string);
     free(report_node->test_name);
+    free(report_node->failed_input);
     report_node->failed_line_string = NULL;
-    report_node->test_name = NULL;
+    report_node->test_name          = NULL;
+    report_node->failed_input       = NULL;
 }
 
 typedef struct
@@ -104,7 +107,7 @@ void update_test_status(const char *test_name, uint8_t passfail)
 }
 
 
-void btest_add_report(const char *test_name, char *filename, uint16_t line)
+void btest_add_report(const char *test_name, char *filename, char *failed_input, uint16_t line)
 {
     R_node report;
     report.test_name = malloc((uint8_t)strlen(test_name));
@@ -113,6 +116,8 @@ void btest_add_report(const char *test_name, char *filename, uint16_t line)
     get_file_line(filename, line, fail_line, 200);
     report.failed_line_string = malloc((uint8_t)strlen(fail_line));
     strcpy(report.failed_line_string, fail_line);
+    report.failed_input = malloc((uint8_t)strlen(failed_input));
+    strcpy(report.failed_input, failed_input);
     report.line_number = line;
     
     ll_add_node(&report_head, &report, sizeof(report));
@@ -140,7 +145,13 @@ void expect_equal_str(char *x, char *y, uint16_t size, const char *test_name, ch
     {
         printf("-> %s: EXPECT EQUAL STR FAILED\n", test_name);
         update_test_status(test_name, 0);
-        btest_add_report(test_name, filename, line);
+        
+        uint8_t sz = sizeof("EXPECT_EQ_STR(,)") + sizeof(x) + sizeof(y) + 1;
+        char *failed_input = malloc(sz);
+        sprintf(failed_input, "EXPECT_EQ_INT(%s,%s)", x,y);
+        
+        btest_add_report(test_name, filename, failed_input, line);
+        
     }
 }
 
@@ -155,7 +166,12 @@ void expect_equal_int(uint32_t x, uint32_t y, const char *test_name, char *filen
     {
         printf("-> %s: EXPECT EQUAL INT FAILED\n", test_name);
         update_test_status(test_name, 0);
-        btest_add_report(test_name, filename, line);
+        
+        uint8_t sz = sizeof("EXPECT_EQ_INT(,)") + x/10 + y/10 + 2;
+        char *failed_input = malloc(sz);
+        sprintf(failed_input, "EXPECT_EQ_INT(%d,%d)", x,y);
+        
+        btest_add_report(test_name, filename, failed_input, line);
     }
 }
 
@@ -170,7 +186,12 @@ void expect_true(uint8_t val, const char *test_name, char *filename, uint16_t li
     {
         printf("-> %s: EXPECT TRUE FAILED\n", test_name);
         update_test_status(test_name, 0);
-        btest_add_report(test_name, filename, line);
+        
+        uint8_t sz = sizeof("EXPECT_TRUE()") + val/10 + 1;
+        char *failed_input = malloc(sz);
+        sprintf(failed_input, "EXPECT_TRUE(%d)", val);
+        
+        btest_add_report(test_name, filename, failed_input, line);
 
     }
 }
@@ -186,7 +207,12 @@ void expect_false(uint8_t val, const char *test_name, char *filename, uint16_t l
     {
         printf("-> %s: EXPECT FALSE FAILED\n", test_name);
         update_test_status(test_name, 0);
-        btest_add_report(test_name, filename, line);
+        
+        uint8_t sz = sizeof("EXPECT_FALSE()") + val/10 + 1;
+        char *failed_input = malloc(sz);
+        sprintf(failed_input, "EXPECT_FALSE(%d)", val);
+        
+        btest_add_report(test_name, filename, failed_input, line);
         
     }
 }
@@ -237,7 +263,7 @@ void btest_report()
         ll_iterate(&current_node);
     }
     
-    printf("failed tests: %d\n", failed_tests_count); // this could be more specific eventually
+    printf("failed tests: %d\n\n", failed_tests_count); // this could be more specific eventually
                                                       // i.e. which tests failed as a whole, and which part
     
     current_node = report_head;
@@ -245,7 +271,7 @@ void btest_report()
     while(current_node != NULL)
     {
         report_node = (R_node *)ll_data(current_node);
-        printf("%s: line %d:%s\n",report_node->test_name,report_node->line_number, report_node->failed_line_string);
+        printf("%s: %s: line %d: %s\n\n",report_node->test_name,report_node->failed_input,report_node->line_number,report_node->failed_line_string);
         ll_iterate(&current_node);
     }
 }
