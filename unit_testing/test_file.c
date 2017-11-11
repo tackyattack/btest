@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "test_file.h"
 #include "btest.h"
+#include <string.h>
 
 TEST(testExternal, testify)
 {
@@ -17,8 +18,8 @@ TEST(testExternal, testify)
     EXPECT_EQ_INT(23001, 22);
     EXPECT_FALSE(1);
     EXPECT_FALSE(0);
-    EXPECT_EQ_STR("hello", "hello", sizeof("hello"));
-    EXPECT_EQ_STR("hello", "world", sizeof("hello"));
+    EXPECT_EQ_STR("hello", "hello", strlen("hello"));
+    EXPECT_EQ_STR("hello", "world", strlen("hello"));
 }
 
 TEST(testExternal, test2)
