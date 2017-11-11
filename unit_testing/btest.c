@@ -146,7 +146,7 @@ void expect_equal_str(char *x, char *y, uint16_t size, const char *test_name, ch
         printf("-> %s: EXPECT EQUAL STR FAILED\n", test_name);
         update_test_status(test_name, 0);
         
-        uint8_t sz = sizeof("EXPECT_EQ_STR(,)") + sizeof(x) + sizeof(y) + 1;
+        uint8_t sz = sizeof("EXPECT_EQ_STR(,)") + strlen(x) + strlen(y) + 1;
         char *failed_input = malloc(sz);
         sprintf(failed_input, "EXPECT_EQ_INT(%s,%s)", x,y);
         
