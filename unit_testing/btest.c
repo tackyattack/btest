@@ -16,6 +16,8 @@
 
 // An external function table map file could be cool (addresses to functions that could be read anywhere).
 
+// Remember, sizeof() passed in array doesn't work! It'll just give you the pointer size.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,19 +112,20 @@ void update_test_status(const char *test_name, uint8_t passfail)
 void btest_add_report(const char *test_name, char *filename, char *failed_input, uint16_t line)
 {
     R_node report;
-    report.test_name = malloc((uint8_t)strlen(test_name));
+    report.test_name = malloc((uint8_t)strlen(test_name)+1);
     strcpy(report.test_name, test_name);
     char fail_line[200] = {0};
     get_file_line(filename, line, fail_line, 200);
-    report.failed_line_string = malloc((uint8_t)strlen(fail_line));
+    report.failed_line_string = malloc((uint8_t)strlen(fail_line)+1);
     strcpy(report.failed_line_string, fail_line);
-    report.failed_input = malloc((uint8_t)strlen(failed_input));
+    report.failed_input = malloc((uint8_t)strlen(failed_input)+1);
     strcpy(report.failed_input, failed_input);
     report.line_number = line;
     
     ll_add_node(&report_head, &report, sizeof(report));
 }
 
+// make sure size is how many characters
 void expect_equal_str(char *x, char *y, uint16_t size, const char *test_name, char *filename, uint16_t line)
 {
     uint8_t passfail = 1;
@@ -131,7 +134,7 @@ void expect_equal_str(char *x, char *y, uint16_t size, const char *test_name, ch
     {
         
     }
-    if(i < (size-1))
+    if(i < (size))
     {
         passfail = 0;
     }
