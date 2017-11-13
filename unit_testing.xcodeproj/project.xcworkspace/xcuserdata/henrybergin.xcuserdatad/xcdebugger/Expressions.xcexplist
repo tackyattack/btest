@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "btest_run_all_tests:btest.c">
+         <PersistentStrings>
+            <PersistentString
+               value = "(T_node *)test_head-&gt;data">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "expect_true:btest.c">
+         <PersistentStrings>
+            <PersistentString
+               value = "(R_node *)report_head-&gt;data">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "btest_start_testing:btest.c">
+         <PersistentStrings>
+            <PersistentString
+               value = "(R_node *)report_head-&gt;data">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "ll_add_node:btest.c">
+         <PersistentStrings>
+            <PersistentString
+               value = "(R_node *)new_node-&gt;data">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
